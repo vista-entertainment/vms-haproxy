@@ -65,7 +65,7 @@ listen stats
 			balance roundrobin
 			hash-type consistent
 			{% for server in backend.servers %}
-			server backend_{{ tenant.tenant }}_{{ backend.name }}_server{{loop.index}} {{server}}  check ssl verify none
+			server backend_{{ tenant.tenant }}_{{ backend.name }}_server{{loop.index}} {{server}} check ssl verify none
 			{% endfor %}
 	{% endfor %}
 {% endfor %}

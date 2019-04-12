@@ -8,7 +8,7 @@ echo "Get Azure VMs Json String from Octopus"
 echo "$AzureVMsJson"
 echo "$AzureVMsJson" > azure-vm.json
 ls -lisa
-new_octopusartifact azure-vm.json
+new_octopusartifact $(pwd)/azure-vm.json
 
 echo "Publish artifact to Octopus"
 new_octopusartifact /etc/haproxy/haproxy.cfg

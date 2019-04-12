@@ -10,7 +10,7 @@ echo "Get Azure VMs Json String from Octopus"
 
 echo "Generate backend rules config from tags"
 sudo apt install python-pip -y
-pip install --upgrade pip
+#pip install --upgrade pip
 pip install Jinja2
 
 location=$(get_octopusvariable "location")

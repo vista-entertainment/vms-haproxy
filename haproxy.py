@@ -65,37 +65,46 @@ def create_jsondata(azure_vm_json_data, location):
 
 	#look for owner of the VM and add it to the dict
 	for jd in azure_vm_json_data:
+		if jd['HAPROXY'] == 'false':
+			continue
+	
 		#If the VM belongs to this location we carry on 
-		if (jd['Az_Location'] == location) and (jd['HAPROXY'] == 'true'):
+		if (jd['Az_Location'] == location):
 	
 			#ensure the backends are populated from tags are populated
-			if jd['TENANT'].strip() and jd['BACKEND'].strip() and jd['PORT'].strip():
-				
-				#BACKEND INFORMATION
-				azure_vm_tenant = jd['TENANT']				
-				azure_vm_backend = jd['BACKEND']
-				azure_vm_ip = jd['Az_VNicPrivateIPs']
-				azure_vm_port = jd['PORT'] if 'PORT' in jd else '443'
-				
-				#fetch or create a tenant dict
-				current_tenant = get_tenant_by_name(azure_vm_tenant)
-				#add to new or existing tenant
-				current_backend = get_backend_by_name(current_tenant, azure_vm_backend, azure_vm_port)
+			try:
+				if jd['TENANT'].strip() and jd['BACKEND'].strip() and jd['PORT'].strip():
+					
+					#BACKEND INFORMATION
+					azure_vm_tenant = jd['TENANT']				
+					azure_vm_backend = jd['BACKEND']
+					azure_vm_ip = jd['Az_VNicPrivateIPs']
+					azure_vm_port = jd['PORT'] if 'PORT' in jd else '443'
+					
+					#fetch or create a tenant dict
+					current_tenant = get_tenant_by_name(azure_vm_tenant)
+					#add to new or existing tenant
+					current_backend = get_backend_by_name(current_tenant, azure_vm_backend, azure_vm_port)
 
-				#add ip and port to server list
-				current_backend['servers'].append("%s:%s" % (azure_vm_ip, azure_vm_port))
+					#add ip and port to server list
+					current_backend['servers'].append("%s:%s" % (azure_vm_ip, azure_vm_port))
+			except KeyError, e:
+				sys.exit('Failed to KeyError find key: '+ str(e) +'\n'+ str(jd))
 				
 			#ensure the backends are populated from tags are populated
-			if jd['FRONTEND'].strip() and jd['BIND'].strip() and jd['DNS'].strip():
-				
-				#grab the attributes that we want from the vm
-				azure_vm_frontend = jd['FRONTEND']				
-				azure_vm_bind = jd['BIND']				
-				azure_vm_dns = jd['DNS']
-				
-				#fetch or create a frontend dict
-				current_frontend = get_frontend_by_name(azure_vm_tenant, azure_vm_frontend, azure_vm_backend, azure_vm_bind)
-				current_frontend['dns'].append("%s" % (azure_vm_dns))
+			try:
+				if jd['FRONTEND'].strip() and jd['BIND'].strip() and jd['DNS'].strip():
+					
+					#grab the attributes that we want from the vm
+					azure_vm_frontend = jd['FRONTEND']				
+					azure_vm_bind = jd['BIND']				
+					azure_vm_dns = jd['DNS']
+					
+					#fetch or create a frontend dict
+					current_frontend = get_frontend_by_name(azure_vm_tenant, azure_vm_frontend, azure_vm_backend, azure_vm_bind)
+					current_frontend['dns'].append("%s" % (azure_vm_dns))
+			except KeyError, e:
+				sys.exit('Failed to KeyError find key: '+ str(e) +'\n'+ str(jd))
 
 				
 	return global_tenants, global_frontends
