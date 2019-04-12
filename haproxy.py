@@ -4,10 +4,12 @@
 import sys
 import json
 import fileinput
+from argparse import ArgumentParser
 from jinja2 import Template, Environment, FileSystemLoader
 
-#Generate rules.toml updateing the backends configuration
+#Generate rules.toml updating the backends configuration
 global_tenants = []
+global_frontends = []
 
 def read_azurerm():
 	azure_json_str = ""
@@ -28,8 +30,9 @@ def get_tenant_by_name(tenant_name):
 	global_tenants.append(new_tenant)
 	return new_tenant
 
+	
 
-def get_backend_by_name(tenant, backend_name, backend_dns, port=443):
+def get_backend_by_name(tenant, backend_name, port=443):
 	for b in tenant['backends']:
 		if b['name'] == backend_name:
 			return b
@@ -37,51 +40,80 @@ def get_backend_by_name(tenant, backend_name, backend_dns, port=443):
 	#print('create backend {0}'.format(backend_name))
 	new_backend = {}
 	new_backend['name']=backend_name
-	new_backend['dns']=backend_dns
 	new_backend['port']=port
 	new_backend['servers']=[]
 	tenant['backends'].append(new_backend)
 	return new_backend
 
+	
+def get_frontend_by_name(tenant_name, frontend_name, backend_name, bind_port):
+	for f in global_frontends:
+		if f['name'] == frontend_name:
+			return f
 
-def create_jsondata(azure_vm_json_data):
+	#print('create frontend {0}'.format(frontend_name))
+	new_frontend = {}
+	new_frontend['name']=frontend_name
+	new_frontend['tenant_name']=tenant_name
+	new_frontend['backend_name']=backend_name
+	new_frontend['bind']=bind_port
+	new_frontend['dns']=[]
+	global_frontends.append(new_frontend)
+	return new_frontend
+
+def create_jsondata(azure_vm_json_data, location):
+
 	#look for owner of the VM and add it to the dict
 	for jd in azure_vm_json_data:
+		#If the VM belongs to this location we carry on 
+		if (jd['Az_Location'] == location) and (jd['HAPROXY'] == 'true'):
 	
-		#ensure the tags are populated
-		if jd['TENANT'].strip() and jd['BACKEND'].strip() and jd['PORT'].strip():
-			
-			#grab the attributes that we want from the vm
-			azure_vm_tenant = jd['TENANT']
-			azure_vm_backend = jd['BACKEND']
-			azure_vm_dns = jd['DNS']
-			azure_vm_ip = jd['Az_VNicPrivateIPs']
-			azure_vm_port = jd['PORT'] if 'PORT' in jd else '443'
+			#ensure the backends are populated from tags are populated
+			if jd['TENANT'].strip() and jd['BACKEND'].strip() and jd['PORT'].strip():
+				
+				#BACKEND INFORMATION
+				azure_vm_tenant = jd['TENANT']				
+				azure_vm_backend = jd['BACKEND']
+				azure_vm_ip = jd['Az_VNicPrivateIPs']
+				azure_vm_port = jd['PORT'] if 'PORT' in jd else '443'
+				
+				#fetch or create a tenant dict
+				current_tenant = get_tenant_by_name(azure_vm_tenant)
+				#add to new or existing tenant
+				current_backend = get_backend_by_name(current_tenant, azure_vm_backend, azure_vm_port)
 
-			#fetch or create a tenant dict
-			current_tenant = get_tenant_by_name(azure_vm_tenant)
-			#add to new or existing tenant
-			current_backend = get_backend_by_name(current_tenant, azure_vm_backend, azure_vm_dns, azure_vm_port)
+				#add ip and port to server list
+				current_backend['servers'].append("%s:%s" % (azure_vm_ip, azure_vm_port))
+				
+			#ensure the backends are populated from tags are populated
+			if jd['FRONTEND'].strip() and jd['BIND'].strip() and jd['DNS'].strip():
+				
+				#grab the attributes that we want from the vm
+				azure_vm_frontend = jd['FRONTEND']				
+				azure_vm_bind = jd['BIND']				
+				azure_vm_dns = jd['DNS']
+				
+				#fetch or create a frontend dict
+				current_frontend = get_frontend_by_name(azure_vm_tenant, azure_vm_frontend, azure_vm_backend, azure_vm_bind)
+				current_frontend['dns'].append("%s" % (azure_vm_dns))
 
-			#add ip and port to server list
-			current_backend['servers'].append("%s:%s" % (azure_vm_ip, azure_vm_port))
-
-	return global_tenants
+				
+	return global_tenants, global_frontends
 
 def render_template():
 	file_loader = FileSystemLoader("templates")
 	env = Environment(loader=file_loader)
 	template = env.get_template('haproxy.j2')
-	
-	#print global_tenants
-	#print(len(global_tenants))
-	#print(global_tenants)
 
-	print(template.render(tenants=global_tenants))
+	print(template.render(frontends=global_frontends, tenants=global_tenants))
 
 if __name__== "__main__":
+	parser = ArgumentParser()
+	parser.add_argument("-l", "--location", dest="location", help="parse given location", metavar="LOCATION")
+	args = parser.parse_args()
+
 	azure_vm_json_data = read_azurerm()
-	create_jsondata(azure_vm_json_data)
+	create_jsondata(azure_vm_json_data, args.location)
 	render_template()
 
 
