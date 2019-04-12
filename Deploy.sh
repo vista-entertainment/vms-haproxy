@@ -12,7 +12,9 @@ echo "Generate backend rules config from tags"
 sudo apt install python-pip -y
 pip install --upgrade pip
 pip install Jinja2
-echo $AzureVMsJson | python haproxy.py > haproxy.cfg
+
+location=$(get_octopusvariable "location")
+echo $AzureVMsJson | python haproxy.py  --location $location > haproxy.cfg
 echo "Backend rules config file"
 cat haproxy.cfg
 
