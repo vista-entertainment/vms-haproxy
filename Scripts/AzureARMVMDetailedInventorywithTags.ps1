@@ -230,7 +230,7 @@ foreach($subscription in $Subscriptions)  
         "   Found: " + $AllVMTags.Count 
   
         # This script support up to 15 VM Tags, Increasing $ALLVMTags array to support up to 15 if less then 15 found 
-        for($i=$($AllVMTags.Count);$i -lt 15; $i++) { $AllVMTags += "Az_VMTag$i"  } #Default Header value  
+        for($i=$($AllVMTags.Count);$i -lt 20; $i++) { $AllVMTags += "Az_VMTag$i"  } #Default Header value  
  
         # Capturing all ARM VM Configurations details 
         "8- Capturing all ARM VM Configuration Details...     (This may take a few minutes)" 
@@ -438,6 +438,11 @@ foreach($subscription in $Subscriptions)  
                             $AllVMTags[12] = $ThisVMTags[12] 
                             $AllVMTags[13] = $ThisVMTags[13] 
                             $AllVMTags[14] = $ThisVMTags[14] 
+                            $AllVMTags[15] = $ThisVMTags[15] 
+                            $AllVMTags[16] = $ThisVMTags[16] 
+                            $AllVMTags[17] = $ThisVMTags[17] 
+                            $AllVMTags[18] = $ThisVMTags[18] 
+                            $AllVMTags[19] = $ThisVMTags[19] 
                          } 
  
         }  #Array $AzureVMs 
