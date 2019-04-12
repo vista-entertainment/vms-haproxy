@@ -10,6 +10,7 @@ echo "Get Azure VMs Json String from Octopus"
 
 echo "Generate backend rules config from tags"
 sudo apt install python-pip -y
+pip install --upgrade pip
 pip install Jinja2
 echo $AzureVMsJson | python haproxy.py > haproxy.cfg
 echo "Backend rules config file"
