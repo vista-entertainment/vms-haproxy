@@ -44,22 +44,23 @@ listen stats
         stats auth vistalinuxuser:Password123
 
 
-# Frontends
-{% for tenant in tenants %}
-	{% for backend in tenant.backends %}
-		frontend {{ tenant.tenant }}_{{ backend.name }}
-			bind *:{{ backend.port }} ssl crt /etc/ssl/private/tempcert.pem
-			reqadd X-Forwarded-Proto:\ https		
-			
-			acl {{ tenant.tenant }}_{{ backend.name }}_url hdr_dom(host) -i {{backend.dns}}
-			use_backend backend_{{ tenant.tenant }}_{{ backend.name }} if {{ tenant.tenant }}_{{ backend.name }}_url
-	{% endfor %}
+# Frontends by binded port
+
+{% for frontend in frontends %}
+	frontend {{ frontend.name }}_{{ frontend.bind }}
+		bind *:{{ frontend.bind }} ssl crt /etc/ssl/private/tempcert.pem
+		reqadd X-Forwarded-Proto:\ https		
+
+		{% for dns in frontend.dns %}		
+			acl {{ frontend.tenant_name }}_{{ frontend.backend_name }}_url hdr_dom(host) -i {{dns}}
+			use_backend {{ frontend.tenant_name }}_{{ frontend.backend_name }}_backend if {{ frontend.tenant_name }}_{{ frontend.backend_name }}_url
+		{% endfor %}
 {% endfor %}
 
-# Backends
+# Backends by tenant
 {% for tenant in tenants %}
 	{% for backend in tenant.backends %}
-		backend backend_{{ tenant.tenant }}_{{ backend.name }}
+		backend {{ tenant.tenant }}_{{ backend.name }}_backend
 			redirect scheme https if !{ ssl_fc }
 			balance roundrobin
 			hash-type consistent
