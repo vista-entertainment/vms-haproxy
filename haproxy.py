@@ -61,7 +61,7 @@ def get_frontend_by_name(tenant_name, frontend_name, backend_name, bind_port):
 	global_frontends.append(new_frontend)
 	return new_frontend
 
-def create_jsondata(azure_vm_json_data, location):
+def create_jsondata(azure_vm_json_data, environment, location):
 
 	#look for owner of the VM and add it to the dict
 	for jd in azure_vm_json_data:
@@ -69,7 +69,7 @@ def create_jsondata(azure_vm_json_data, location):
 			continue
 	
 		#If the VM belongs to this location we carry on 
-		if (jd['Az_Location'] == location):
+		if (jd['Az_Location'] == location) and (jd['ENVIRONMENT'] == environment):
 	
 			#ensure the backends are populated from tags are populated
 			try:
@@ -119,10 +119,20 @@ def render_template():
 if __name__== "__main__":
 	parser = ArgumentParser()
 	parser.add_argument("-l", "--location", dest="location", help="parse given location", metavar="LOCATION")
+	parser.add_argument("-env", "--environment", dest="environment", help="parse given environment", metavar="ENVIRONMENT")
 	args = parser.parse_args()
 
 	azure_vm_json_data = read_azurerm()
-	create_jsondata(azure_vm_json_data, args.location)
+	create_jsondata(azure_vm_json_data, args.environment, args.location)
+	
+	if len(global_frontends) == 0:
+		sys.exit('No frontends in this region for env '+ args.environment +' and location '+ args.location)
+		
+	if len(global_tenants) == 0:
+		sys.exit('No tenants/backends in this region for env '+ args.environment +' and location '+ args.location)
+	
+	#print( global_frontends )
+	#print( global_tenants )
 	render_template()
 
 

@@ -22,7 +22,7 @@ echo "Install HAProxy"
 sudo apt-get update
 sudo apt-get install -y haproxy
 
-echo "Copy generated configs"
-sudo cp haproxy.cfg /etc/haproxy/haproxy.cfg
+#echo "Copy generated configs"
+#sudo cp haproxy.cfg /etc/haproxy/haproxy.cfg
 
-sudo sudo service haproxy start
+#sudo sudo service haproxy start
