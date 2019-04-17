@@ -65,6 +65,7 @@ def create_jsondata(azure_vm_json_data, environment, location):
 
 	#look for owner of the VM and add it to the dict
 	for jd in azure_vm_json_data:
+		#print jd
 		if jd['HAPROXY'] == 'false':
 			continue
 	
